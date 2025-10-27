@@ -1,0 +1,77 @@
+.listContainer {
+  margin-top: 60px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    overflow-y: scroll;
+    justify-content: center;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  .card {
+    width: 180px;
+    height: 100px;
+    border: 3px solid #b5b5be;
+    border-radius: 5px;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    &:hover {
+      background-color: rgb(230, 223, 223);
+    }
+    .cardName {
+      width: 100%;
+      font-weight: 700;
+      font-size: 20px;
+      text-align: center;
+      white-space: nowrap;      /* 確保所有文字都在一行內 */
+      overflow: hidden;         /* 隱藏超出容器的內容 */
+      text-overflow: ellipsis;
+    }
+    .cardInfo {
+      width: 100%;
+      margin-top: 8px;
+      display: flex;
+
+      .stockId {
+        width: 100%;
+        overflow: hidden;
+        text-align: center;
+      }
+    }
+  }
+  
+  .paginator {
+    background-color: rgb(206, 204, 204);
+    display:flex;
+    justify-content:center;
+    align-items: center;
+    margin: 0 auto;
+    padding: 8px;
+    margin-top: 20px;
+    button {
+      width: 80px;
+      border-radius: 5px;
+      margin-left: 12px;
+      margin-right: 12px;
+      padding: 2px;
+      &:hover {
+        background-color: rgb(71, 69, 69);
+        color: white;
+      }
+    }
+  }
+  
+  @media screen and (max-width: 768px) {
+    .listContainer {
+      width: 100%;
+    }
+    .card {
+      width: 120px;
+    }
+  }
+  
