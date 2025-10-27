@@ -1,6 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { getStockInfo } from '../../lib/api/stocks'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 import styles from './index.module.scss'
 import Swal from 'sweetalert2'
 import { useEffect, useState } from 'react'
@@ -37,7 +38,7 @@ function Navbar1 ({ onOpenSearchModal }) {
 
   useEffect(() => {
     console.log(allStocks)
-  },[])
+  },[allStocks])
 
   const { navbar } = styles
 
@@ -46,9 +47,11 @@ function Navbar1 ({ onOpenSearchModal }) {
       className={`${navbar} navbar navbar-expand-lg bg-body-tertiary position-fixed top-0 border-bottom w-100`}
     >
       <div className='container-fluid '>
-        <a className='navbar-brand w-25' href='/'>
-          買賣力道基地
-        </a>
+        <Link href='/'>
+          <span className='navbar-brand w-25' style={{ cursor: 'pointer' }}>
+            買賣力道基地
+          </span>
+        </Link>
         <div className='d-flex w-50 '>
           <input
             className='form-control me-1'

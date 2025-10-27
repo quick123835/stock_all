@@ -104,6 +104,7 @@ const Home = () => {
     } else {
       getAllStocksAsync()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

@@ -210,6 +210,7 @@ const PresureStick = ({ stockDetail, stockName, stockId , stockInfo }) => {
       }
     }
     setChartOptions(options)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stockDetail, stockName])
 
   const { pic, category } = styles
