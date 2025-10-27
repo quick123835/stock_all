@@ -31,7 +31,8 @@ const Home = () => {
         item.industry_category !== 'ETN' && 
         item.industry_category !== '指數投資證券(ETN)' && 
         item.industry_category !== '受益證券' &&
-        item.industry_category !== '大盤'
+        item.industry_category !== '大盤' &&
+        item.industry_category !== '上櫃ETF'
       )
       let uniqueArray = Array.from(new Map(filterData.map(item => [item.stock_id, item])).values())
       

@@ -11,8 +11,8 @@ const ListItem = ({item , onStockClick }) => {
         const formattedDate = `${year}/${month}/${day}`
         const roundedNumber = Number(item.pressure[1]).toFixed(4)
         
-        // 只顯示力道 <= 0.6 的
-        if (roundedNumber > 0.6) return null
+        // 只顯示力道 <= 0.6 的，且排除 NaN
+        if (isNaN(roundedNumber) || roundedNumber > 0.6) return null
         
         return (
             <div className={`${card} ${ roundedNumber <= 0.6 && red} `} onClick={() => {onStockClick?.(item.id , item.name)}}>
