@@ -50,17 +50,21 @@ const Home = () => {
       if (res) {
         dispatch(StockInfo(res))
         const pressure = presureCalculate(res)
-        const ans = renderList.filter(i => i.id === stock.stock_id)
-        if (ans.length === 0) {
-          setRenderList(renderList => [
-            ...renderList,
+        
+        setRenderList(prevList => {
+          // 在函數式更新內部檢查，避免 race condition
+          const exists = prevList.some(i => i.id === stock.stock_id)
+          if (exists) return prevList
+          
+          return [
+            ...prevList,
             {
               name: stock.stock_name,
               id: stock.stock_id,
               pressure: pressure
             }
-          ])
-        }
+          ]
+        })
       }
     } catch (error) {
       console.log(error)
@@ -70,16 +74,25 @@ const Home = () => {
   const handleCalculateAll = async () => {
     setCalculating(true)
     setRenderList([])
-    
-    const stockInfoPromises = stocks.map(stock => getStockInfoAsync(stock))
-    Promise.all(stockInfoPromises)
-      .then(() => {
-        setCalculating(false)
-      })
-      .catch(error => {
-        console.error(error)
-        setCalculating(false)
-      })
+  
+    const batchSize = 10 // 每次同時發送 10 個請求，可依電腦效能調整
+    const delay = (ms) => new Promise(r => setTimeout(r, ms))
+  
+    try {
+      for (let i = 0; i < stocks.length; i += batchSize) {
+        const batch = stocks.slice(i, i + batchSize)
+        await Promise.all(batch.map(stock => getStockInfoAsync(stock)))
+  
+        // 可選：給伺服器或瀏覽器一點喘息時間（避免網路壓力過大）
+        await delay(100)
+  
+        console.log(`✅ 已完成第 ${(i / batchSize) + 1} 批 (${i + batch.length}/${stocks.length})`)
+      }
+    } catch (error) {
+      console.error('批次執行錯誤：', error)
+    } finally {
+      setCalculating(false)
+    }
   }
 
   const handleStockClick = (id, name) => {
