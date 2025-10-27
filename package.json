@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p $PORT",
+    "start": "next start -p ${PORT:-3000}",
     "export": "next export",
-    "deploy": "gh-pages -d out"
+    "deploy": "gh-pages -d out",
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
     "axios": "^1.6.0",
