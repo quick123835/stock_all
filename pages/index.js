@@ -21,29 +21,50 @@ const Home = () => {
 
   const getAllStocksAsync = async () => {
     try {
-      const { data } = await getAllStocks()
-
-      // 刪除基金及重複的
-      const filterData = data.filter(item => 
-        item.industry_category !== 'ETF' && 
-        item.industry_category !== 'Index' && 
-        item.industry_category !== '上櫃指數股票型基金(ETF)' && 
-        item.industry_category !== 'ETN' && 
-        item.industry_category !== '指數投資證券(ETN)' && 
-        item.industry_category !== '受益證券' &&
-        item.industry_category !== '大盤' &&
-        item.industry_category !== '上櫃ETF'
-      )
-      let uniqueArray = Array.from(new Map(filterData.map(item => [item.stock_id, item])).values())
-      
-      dispatch(getTotalStocks(uniqueArray))
-      setStocks(uniqueArray)
-      setLoading(false)
+      const { data } = await getAllStocks();
+  
+      // 1. 建立 Map 進行去重 (以 stock_id 為 Key)
+      const uniqueMap = new Map();
+  
+      data.forEach(item => {
+        const id = String(item.stock_id || '');
+        const type = String(item.type || '').toLowerCase(); // 統一轉小寫
+        const category = String(item.industry_category || '');
+  
+        // 過濾邏輯：
+        // A. 必須是 4 碼 (濾掉權證、受益證券)
+        const isFourDigits = id.length === 4;
+  
+        // B. 產業別不含排除字眼 (濾掉 ETF、指數)
+        const excludeKeywords = ['ETF', 'Index', '指數', '受益證券', '存託憑證', '權證', '基金'];
+        const isNotExcluded = !excludeKeywords.some(key => category.includes(key));
+  
+        // C. 市場別鎖定 (這是關鍵！濾掉 ESB 興櫃)
+        // 如果數字還是太多，代表裡面有 'esb'，我們只留 'twse' 和 'tpex'
+        const isMainMarket = (type === 'twse' || type === 'tpex');
+  
+        if (isFourDigits && isNotExcluded && isMainMarket) {
+          // 如果重複出現，Map 會自動覆蓋，確保 unique
+          uniqueMap.set(id, item);
+        }
+      });
+  
+      // 轉回陣列並排序
+      const uniqueArray = Array.from(uniqueMap.values());
+      uniqueArray.sort((a, b) => a.stock_id.localeCompare(b.stock_id));
+  
+      console.log("最終精確家數：", uniqueArray.length);
+      console.log(uniqueArray.filter(s => s.type === 'esb'))
+      console.log(new Set(uniqueArray.map(s => s.stock_id)).size === uniqueArray.length)
+  
+      dispatch(getTotalStocks(uniqueArray));
+      setStocks(uniqueArray);
+      setLoading(false);
     } catch (error) {
-      console.error(error)
-      setLoading(false)
+      console.error(error);
+      setLoading(false);
     }
-  }
+  };
 
   const getStockInfoAsync = async (stock) => {
     try {
