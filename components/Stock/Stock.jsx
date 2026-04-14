@@ -1,17 +1,27 @@
 import styles from './Stock.module.scss'
 import { useEffect, useState } from 'react'
-import { getStockInfo, getFinancialStatements, getMonthRevenue } from '../../lib/api/stocks.js'
+import {
+  getStockInfo, getFinancialStatements, getMonthRevenue,
+  getMarginShortSale, getInstitutionalInvestors
+} from '../../lib/api/stocks.js'
 import { useRouter } from 'next/router'
 import PresureStick from '../PresureStick/PresureStick'
 import { useSelector, useDispatch } from 'react-redux'
-import { setFinancialStatements, setMonthRevenue } from '../../lib/redux/actions/actions'
+import {
+  setFinancialStatements, setMonthRevenue,
+  setMarginShortSale, setInstitutionalInvestors
+} from '../../lib/redux/actions/actions'
 import clsx from 'clsx'
 
 const TABS = ['壓力圖', '基本面', '籌碼面']
 const FUNDAMENTAL_SUBTABS = ['EPS', '月營收']
+const CHIPS_SUBTABS = ['融資融券', '三大法人']
 
 const monthToQ = { '03': 'Q1', '06': 'Q2', '09': 'Q3', '12': 'Q4' }
 
+const stickyTh = { position: 'sticky', top: 0, zIndex: 1, background: '#f5f5f5' }
+
+/* ── EPS 表 ── */
 const EpsTable = ({ financialData, tableStyle }) => {
   const epsData = (financialData || []).filter(d => d.type === 'EPS')
   const currentYear = String(new Date().getFullYear())
@@ -23,78 +33,59 @@ const EpsTable = ({ financialData, tableStyle }) => {
     byYear[year][q] = value
   })
   const years = Object.keys(byYear).sort((a, b) => b - a)
-
   return (
     <table className={tableStyle}>
       <thead>
         <tr>
-          <th>年份</th>
-          <th>Q1</th>
-          <th>Q2</th>
-          <th>Q3</th>
-          <th>Q4</th>
-          <th>全年合計</th>
+          <th>年份</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>全年合計</th>
         </tr>
       </thead>
       <tbody>
-        {years.length > 0 ? years.map(year => {
+        {years.map(year => {
           const row = byYear[year]
-          const total = ['Q1', 'Q2', 'Q3', 'Q4'].reduce((sum, q) => sum + (row[q] ?? 0), 0)
+          const total = ['Q1','Q2','Q3','Q4'].reduce((s, q) => s + (row[q] ?? 0), 0)
           return (
             <tr key={year}>
               <td>{year}</td>
-              {['Q1', 'Q2', 'Q3', 'Q4'].map(q => (
-                <td key={q}>{row[q] ?? '-'}</td>
-              ))}
+              {['Q1','Q2','Q3','Q4'].map(q => <td key={q}>{row[q] ?? '-'}</td>)}
               <td>{total.toFixed(2)}</td>
             </tr>
           )
-        }) : (
-          <tr>
-            <td colSpan={6} style={{ textAlign: 'center', color: '#999' }}>載入中...</td>
-          </tr>
-        )}
+        })}
       </tbody>
     </table>
   )
 }
 
+/* ── 月營收表 ── */
 const RevenueTable = ({ revenueData, tableStyle, wrapperStyle }) => {
   const raw = revenueData || []
-
-  // key: "YYYY-M" → revenue
   const revenueMap = {}
   raw.forEach(({ revenue_year, revenue_month, revenue }) => {
     revenueMap[`${revenue_year}-${revenue_month}`] = revenue
   })
-
   const calc = (cur, prev) =>
     prev && prev !== 0 ? (((cur - prev) / prev) * 100).toFixed(2) : '-'
-
-  // 由新到舊
   const data = [...raw].reverse().map(item => {
     const { revenue_year, revenue_month, revenue } = item
-    const prevMonth = revenue_month === 1
-      ? `${revenue_year - 1}-12`
-      : `${revenue_year}-${revenue_month - 1}`
-    const sameMonthLastYear = `${revenue_year - 1}-${revenue_month}`
-
+    const prevMonth = revenue_month === 1 ? `${revenue_year - 1}-12` : `${revenue_year}-${revenue_month - 1}`
     return {
       ...item,
-      mom: calc(revenue, revenueMap[prevMonth]),         // 月增率
-      yoy: calc(revenue, revenueMap[sameMonthLastYear]), // 年增率
+      mom: calc(revenue, revenueMap[prevMonth]),
+      yoy: calc(revenue, revenueMap[`${revenue_year - 1}-${revenue_month}`]),
     }
   })
-
+  const colorCell = val => ({ color: val === '-' ? '#999' : val >= 0 ? '#d32f2f' : '#388e3c' })
+  const fmt = val => val === '-' ? '-' : `${val > 0 ? '+' : ''}${val}`
   return (
     <div className={wrapperStyle}>
       <table className={tableStyle}>
         <thead>
           <tr>
-            <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#f5f5f5' }}>年月</th>
-            <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#f5f5f5' }}>月營收</th>
-            <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#f5f5f5' }}>月增率 (%)</th>
-            <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#f5f5f5' }}>年增率 (%)</th>
+            <th style={stickyTh}>年月</th>
+            <th style={stickyTh}>月營收</th>
+            <th style={stickyTh}>月增率 (%)</th>
+            <th style={stickyTh}>年增率 (%)</th>
           </tr>
         </thead>
         <tbody>
@@ -102,17 +93,11 @@ const RevenueTable = ({ revenueData, tableStyle, wrapperStyle }) => {
             <tr key={i}>
               <td>{`${item.revenue_year}/${String(item.revenue_month).padStart(2, '0')}`}</td>
               <td>{item.revenue?.toLocaleString() ?? '-'}</td>
-              <td style={{ color: item.mom === '-' ? '#999' : item.mom >= 0 ? '#d32f2f' : '#388e3c' }}>
-                {item.mom === '-' ? '-' : `${item.mom > 0 ? '+' : ''}${item.mom}`}
-              </td>
-              <td style={{ color: item.yoy === '-' ? '#999' : item.yoy >= 0 ? '#d32f2f' : '#388e3c' }}>
-                {item.yoy === '-' ? '-' : `${item.yoy > 0 ? '+' : ''}${item.yoy}`}
-              </td>
+              <td style={colorCell(item.mom)}>{fmt(item.mom)}</td>
+              <td style={colorCell(item.yoy)}>{fmt(item.yoy)}</td>
             </tr>
           )) : (
-            <tr>
-              <td colSpan={4} style={{ textAlign: 'center', color: '#999' }}>載入中...</td>
-            </tr>
+            <tr><td colSpan={4} style={{ textAlign: 'center', color: '#999' }}>載入中...</td></tr>
           )}
         </tbody>
       </table>
@@ -120,7 +105,98 @@ const RevenueTable = ({ revenueData, tableStyle, wrapperStyle }) => {
   )
 }
 
-const Stock = ({ stockId: propStockId, stockName: propStockName }) => {
+/* ── 融資融券表 ── */
+const MarginTable = ({ data, tableStyle, wrapperStyle }) => {
+  const rows = [...(data || [])].reverse()
+  return (
+    <div className={wrapperStyle}>
+      <table className={tableStyle}>
+        <thead>
+          <tr>
+            <th style={stickyTh}>日期</th>
+            <th style={stickyTh}>融資買進</th>
+            <th style={stickyTh}>融資賣出</th>
+            <th style={stickyTh}>融資餘額</th>
+            <th style={stickyTh}>融券買進</th>
+            <th style={stickyTh}>融券賣出</th>
+            <th style={stickyTh}>融券餘額</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length > 0 ? rows.map((item, i) => (
+            <tr key={i}>
+              <td>{item.date}</td>
+              <td>{item.MarginPurchaseBuy?.toLocaleString() ?? '-'}</td>
+              <td>{item.MarginPurchaseSell?.toLocaleString() ?? '-'}</td>
+              <td>{item.MarginPurchaseTodayBalance?.toLocaleString() ?? '-'}</td>
+              <td>{item.ShortSaleBuy?.toLocaleString() ?? '-'}</td>
+              <td>{item.ShortSaleSell?.toLocaleString() ?? '-'}</td>
+              <td>{item.ShortSaleTodayBalance?.toLocaleString() ?? '-'}</td>
+            </tr>
+          )) : (
+            <tr><td colSpan={7} style={{ textAlign: 'center', color: '#999' }}>載入中...</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/* ── 三大法人表 ── */
+const NAME_MAP = {
+  Foreign_Investor: '外資',
+  Foreign_Dealer_Self: '外資自營',
+  Investment_Trust: '投信',
+  Dealer_self: '自營(自行)',
+  Dealer_Hedging: '自營(避險)',
+}
+
+const InstitutionalTable = ({ data, tableStyle, wrapperStyle }) => {
+  // 樞紐：每天各 name 的 buy-sell
+  const byDate = {}
+  ;(data || []).forEach(({ date, name, buy, sell }) => {
+    if (!byDate[date]) byDate[date] = {}
+    byDate[date][name] = (buy - sell) / 1000 // 換算張
+  })
+
+  const rows = Object.entries(byDate).sort((a, b) => b[0].localeCompare(a[0]))
+  const cols = ['Foreign_Investor', 'Investment_Trust', 'Dealer_self', 'Dealer_Hedging']
+  const color = v => ({ color: v > 0 ? '#d32f2f' : v < 0 ? '#388e3c' : '#999' })
+  const fmt = v => v !== undefined ? Math.round(v).toLocaleString() : '-'
+
+  return (
+    <div className={wrapperStyle}>
+      <table className={tableStyle}>
+        <thead>
+          <tr>
+            <th style={stickyTh}>日期</th>
+            {cols.map(k => <th key={k} style={stickyTh}>{NAME_MAP[k]}</th>)}
+            <th style={stickyTh}>三大合計</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length > 0 ? rows.map(([date, vals]) => {
+            const total = cols.reduce((s, k) => s + (vals[k] ?? 0), 0)
+            return (
+              <tr key={date}>
+                <td>{date}</td>
+                {cols.map(k => (
+                  <td key={k} style={color(vals[k] ?? 0)}>{fmt(vals[k])}</td>
+                ))}
+                <td style={color(total)}>{Math.round(total).toLocaleString()}</td>
+              </tr>
+            )
+          }) : (
+            <tr><td colSpan={7} style={{ textAlign: 'center', color: '#999' }}>載入中...</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/* ── 主元件 ── */
+const Stock = ({ stockId: propStockId }) => {
   const router = useRouter()
   const dispatch = useDispatch()
   const id = propStockId || router.query.id
@@ -128,28 +204,50 @@ const Stock = ({ stockId: propStockId, stockName: propStockName }) => {
   const [stockDetail, setStockDetail] = useState([])
   const [currentTab, setCurrentTab] = useState('壓力圖')
   const [fundamentalSubTab, setFundamentalSubTab] = useState('EPS')
+  const [chipsSubTab, setChipsSubTab] = useState('融資融券')
+
   const stockInfo = useSelector(state => state.stockInfoReducer)
   const financialData = useSelector(state => state.getFinancialStatementsReducer)
   const revenueData = useSelector(state => state.getMonthRevenueReducer)
+  const marginData = useSelector(state => state.getMarginShortSaleReducer)
+  const institutionalData = useSelector(state => state.getInstitutionalInvestorsReducer)
 
   useEffect(() => {
     if (!id) return
     const fetchAll = async () => {
       try {
-        const [stockData, financial, revenue] = await Promise.all([
+        const [stockData, financial, revenue, margin, institutional] = await Promise.all([
           getStockInfo(id),
           getFinancialStatements(id),
           getMonthRevenue(id),
+          getMarginShortSale(id),
+          getInstitutionalInvestors(id),
         ])
         setStockDetail(stockData)
         dispatch(setFinancialStatements(financial))
         dispatch(setMonthRevenue(revenue))
+        dispatch(setMarginShortSale(margin))
+        dispatch(setInstitutionalInvestors(institutional))
       } catch (error) {
         console.error(error)
       }
     }
     fetchAll()
   }, [id])
+
+  const SubTabs = ({ tabs: subTabList, active, onChange }) => (
+    <div className={subTabs}>
+      {subTabList.map(t => (
+        <button
+          key={t}
+          className={clsx(subTab, active === t && activeSubTab)}
+          onClick={() => onChange(t)}
+        >
+          {t}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
     <div className={container}>
@@ -167,39 +265,23 @@ const Stock = ({ stockId: propStockId, stockName: propStockName }) => {
 
       <div className={tabContent}>
         {currentTab === '壓力圖' && (
-          <PresureStick
-            stockDetail={stockDetail}
-            stockId={id}
-            stockInfo={stockInfo}
-          />
+          <PresureStick stockDetail={stockDetail} stockId={id} stockInfo={stockInfo} />
         )}
 
         {currentTab === '基本面' && (
           <>
-            <div className={subTabs}>
-              {FUNDAMENTAL_SUBTABS.map(t => (
-                <button
-                  key={t}
-                  className={clsx(subTab, fundamentalSubTab === t && activeSubTab)}
-                  onClick={() => setFundamentalSubTab(t)}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            {fundamentalSubTab === 'EPS' && (
-              <EpsTable financialData={financialData} tableStyle={table} />
-            )}
-            {fundamentalSubTab === '月營收' && (
-              <RevenueTable revenueData={revenueData} tableStyle={table} wrapperStyle={revenueWrapper} />
-            )}
+            <SubTabs tabs={FUNDAMENTAL_SUBTABS} active={fundamentalSubTab} onChange={setFundamentalSubTab} />
+            {fundamentalSubTab === 'EPS' && <EpsTable financialData={financialData} tableStyle={table} />}
+            {fundamentalSubTab === '月營收' && <RevenueTable revenueData={revenueData} tableStyle={table} wrapperStyle={revenueWrapper} />}
           </>
         )}
 
         {currentTab === '籌碼面' && (
-          <div style={{ color: '#999', padding: '32px', textAlign: 'center' }}>
-            籌碼面資料待開發
-          </div>
+          <>
+            <SubTabs tabs={CHIPS_SUBTABS} active={chipsSubTab} onChange={setChipsSubTab} />
+            {chipsSubTab === '融資融券' && <MarginTable data={marginData} tableStyle={table} wrapperStyle={revenueWrapper} />}
+            {chipsSubTab === '三大法人' && <InstitutionalTable data={institutionalData} tableStyle={table} wrapperStyle={revenueWrapper} />}
+          </>
         )}
       </div>
     </div>
