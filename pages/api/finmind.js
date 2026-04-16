@@ -8,7 +8,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'missing required params' })
   }
 
-  const params = new URLSearchParams({ dataset, data_id })
+  const params = new URLSearchParams({ dataset })
+  if (data_id) params.set('data_id', data_id)
   if (start_date) params.set('start_date', start_date)
   if (end_date) params.set('end_date', end_date)
   if (token) params.set('token', token)
