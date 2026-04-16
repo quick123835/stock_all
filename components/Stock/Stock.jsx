@@ -13,21 +13,20 @@ const TABS = ['壓力圖', '基本面', '籌碼面']
 const FUNDAMENTAL_SUBTABS = ['EPS', '月營收']
 const CHIPS_SUBTABS = ['融資融券', '三大法人']
 
-const monthToQ = { '03': 'Q1', '06': 'Q2', '09': 'Q3', '12': 'Q4' }
-
 const stickyTh = { position: 'sticky', top: 0, zIndex: 1, background: '#f5f5f5' }
 
 /* ── EPS 表 ── */
 const EpsTable = ({ financialData, tableStyle }) => {
   const epsData = (financialData || []).filter(d => d.type === 'EPS')
-  console.log('[EpsTable] financialData length:', financialData?.length, 'epsData:', epsData)
   const currentYear = String(new Date().getFullYear())
   const byYear = { [currentYear]: {} }
   epsData.forEach(({ date, value }) => {
-    const [year, month] = date.split('-')
-    const q = monthToQ[month] || `M${month}`
-    if (!byYear[year]) byYear[year] = {}
-    byYear[year][q] = value
+    const parts = date.split('-')
+    const yr = parts[0]
+    const qNum = Math.ceil(parseInt(parts[1], 10) / 3)
+    const qKey = 'Q' + qNum
+    if (!byYear[yr]) byYear[yr] = {}
+    byYear[yr][qKey] = value
   })
   const years = Object.keys(byYear).sort((a, b) => b - a)
 
@@ -222,7 +221,6 @@ const Stock = ({ stockId: propStockId }) => {
           getMarginShortSale(id),
           getInstitutionalInvestors(id),
         ])
-        console.log('[fetchAll] financial raw:', financial)
         setStockDetail(stockData || [])
         setFinancialData(financial || [])
         setRevenueData(revenue || [])
