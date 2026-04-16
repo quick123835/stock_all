@@ -20,6 +20,7 @@ const stickyTh = { position: 'sticky', top: 0, zIndex: 1, background: '#f5f5f5' 
 /* ── EPS 表 ── */
 const EpsTable = ({ financialData, tableStyle }) => {
   const epsData = (financialData || []).filter(d => d.type === 'EPS')
+  console.log('[EpsTable] financialData length:', financialData?.length, 'epsData:', epsData)
   const currentYear = String(new Date().getFullYear())
   const byYear = { [currentYear]: {} }
   epsData.forEach(({ date, value }) => {
@@ -221,6 +222,7 @@ const Stock = ({ stockId: propStockId }) => {
           getMarginShortSale(id),
           getInstitutionalInvestors(id),
         ])
+        console.log('[fetchAll] financial raw:', financial)
         setStockDetail(stockData || [])
         setFinancialData(financial || [])
         setRevenueData(revenue || [])
