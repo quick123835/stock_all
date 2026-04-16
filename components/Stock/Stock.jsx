@@ -33,6 +33,7 @@ const EpsTable = ({ financialData, tableStyle }) => {
     byYear[year][q] = value
   })
   const years = Object.keys(byYear).sort((a, b) => b - a)
+
   return (
     <table className={tableStyle}>
       <thead>
@@ -205,6 +206,7 @@ const Stock = ({ stockId: propStockId }) => {
   const [currentTab, setCurrentTab] = useState('壓力圖')
   const [fundamentalSubTab, setFundamentalSubTab] = useState('EPS')
   const [chipsSubTab, setChipsSubTab] = useState('融資融券')
+  const [loading, setLoading] = useState(false)
 
   const stockInfo = useSelector(state => state.stockInfoReducer)
   const financialData = useSelector(state => state.getFinancialStatementsReducer)
@@ -215,6 +217,7 @@ const Stock = ({ stockId: propStockId }) => {
   useEffect(() => {
     if (!id) return
     const fetchAll = async () => {
+      setLoading(true)
       try {
         const [stockData, financial, revenue, margin, institutional] = await Promise.all([
           getStockInfo(id),
@@ -230,6 +233,8 @@ const Stock = ({ stockId: propStockId }) => {
         dispatch(setInstitutionalInvestors(institutional))
       } catch (error) {
         console.error(error)
+      } finally {
+        setLoading(false)
       }
     }
     fetchAll()
@@ -246,6 +251,12 @@ const Stock = ({ stockId: propStockId }) => {
           {t}
         </button>
       ))}
+    </div>
+  )
+
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300, color: '#888', fontSize: 16 }}>
+      載入中...
     </div>
   )
 
