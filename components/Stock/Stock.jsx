@@ -6,11 +6,7 @@ import {
 } from '../../lib/api/stocks.js'
 import { useRouter } from 'next/router'
 import PresureStick from '../PresureStick/PresureStick'
-import { useSelector, useDispatch } from 'react-redux'
-import {
-  setFinancialStatements, setMonthRevenue,
-  setMarginShortSale, setInstitutionalInvestors
-} from '../../lib/redux/actions/actions'
+import { useSelector } from 'react-redux'
 import clsx from 'clsx'
 
 const TABS = ['壓力圖', '基本面', '籌碼面']
@@ -199,20 +195,19 @@ const InstitutionalTable = ({ data, tableStyle, wrapperStyle }) => {
 /* ── 主元件 ── */
 const Stock = ({ stockId: propStockId }) => {
   const router = useRouter()
-  const dispatch = useDispatch()
   const id = propStockId || router.query.id
   const { container, tabs, tab, activeTab, tabContent, subTabs, subTab, activeSubTab, table, revenueWrapper } = styles
   const [stockDetail, setStockDetail] = useState([])
+  const [financialData, setFinancialData] = useState([])
+  const [revenueData, setRevenueData] = useState([])
+  const [marginData, setMarginData] = useState([])
+  const [institutionalData, setInstitutionalData] = useState([])
   const [currentTab, setCurrentTab] = useState('壓力圖')
   const [fundamentalSubTab, setFundamentalSubTab] = useState('EPS')
   const [chipsSubTab, setChipsSubTab] = useState('融資融券')
   const [loading, setLoading] = useState(false)
 
   const stockInfo = useSelector(state => state.stockInfoReducer)
-  const financialData = useSelector(state => state.getFinancialStatementsReducer)
-  const revenueData = useSelector(state => state.getMonthRevenueReducer)
-  const marginData = useSelector(state => state.getMarginShortSaleReducer)
-  const institutionalData = useSelector(state => state.getInstitutionalInvestorsReducer)
 
   useEffect(() => {
     if (!id) return
@@ -226,11 +221,11 @@ const Stock = ({ stockId: propStockId }) => {
           getMarginShortSale(id),
           getInstitutionalInvestors(id),
         ])
-        setStockDetail(stockData)
-        dispatch(setFinancialStatements(financial))
-        dispatch(setMonthRevenue(revenue))
-        dispatch(setMarginShortSale(margin))
-        dispatch(setInstitutionalInvestors(institutional))
+        setStockDetail(stockData || [])
+        setFinancialData(financial || [])
+        setRevenueData(revenue || [])
+        setMarginData(margin || [])
+        setInstitutionalData(institutional || [])
       } catch (error) {
         console.error(error)
       } finally {
