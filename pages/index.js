@@ -231,7 +231,7 @@ const Home = () => {
           <p style={{ color: '#cccccc', fontSize: '22px', fontWeight: 300, margin: '0 0 16px' }}>
             一鍵力道計算中...
           </p>
-          <p style={{ color: '#6b6b6b', fontSize: '14px', fontWeight: 400 }}>
+          <p style={{ color: '#cccccc', fontSize: '14px', fontWeight: 400 }}>
             已完成 {renderList.length} / {stocks.length}
           </p>
         </section>
@@ -241,7 +241,7 @@ const Home = () => {
       {showCards && (
         <section
           style={{
-            background: 'linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%)',
+            background: 'linear-gradient(180deg, #121314 0%, #000000 100%)',
             marginTop: '56px',
             padding: '64px 32px 96px',
           }}
@@ -252,14 +252,14 @@ const Home = () => {
               style={{
                 fontSize: '35px',
                 fontWeight: 300,
-                color: '#000000',
+                color: '#ffffff',
                 lineHeight: 1.25,
                 margin: '0 0 8px',
               }}
             >
               買賣力道結果
             </h2>
-            <p style={{ fontSize: '14px', fontWeight: 400, color: '#6b6b6b', margin: 0 }}>
+            <p style={{ fontSize: '14px', fontWeight: 400, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
               顯示力道值 ≤ 0.6 的股票，共 {renderList.filter(i => {
                 const v = Number(i.pressure?.[1])
                 return !isNaN(v) && v <= 0.6
