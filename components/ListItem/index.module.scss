@@ -1,54 +1,76 @@
 .card {
-  width: 180px;
+  width: 200px;
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: rgba(0, 0, 0, 0.08) 0 5px 9px 0;
   border: none;
-  border-left: 3px solid transparent;
+  border-left: 4px solid #d53b00;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 16px;
+  padding: 20px 16px 16px;
   cursor: pointer;
   transition: box-shadow 200ms ease, transform 200ms ease;
+  gap: 4px;
 
   &:hover {
-    box-shadow: rgba(0, 0, 0, 0.16) 0 5px 9px 0;
-    transform: scale(1.02);
+    box-shadow: rgba(0, 0, 0, 0.16) 0 8px 16px 0;
+    transform: translateY(-4px) scale(1.02);
   }
 }
 
-.highlight {
-  border-left: 3px solid #d53b00;
-}
-
 .cardName {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   color: #1f1f1f;
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25;
   margin-bottom: 8px;
 }
 
 .meta {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
   color: #6b6b6b;
   line-height: 1.5;
 }
 
+.divider {
+  height: 1px;
+  background: #f3f3f3;
+  margin: 10px 0 8px;
+}
+
+.pressureRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.pressureLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b6b6b;
+  letter-spacing: 0.1px;
+}
+
 .pressureValue {
-  font-size: 14px;
+  font-size: 22px;
   font-weight: 700;
   color: #d53b00;
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 @media screen and (max-width: 768px) {
   .card {
-    width: 140px;
+    width: 160px;
+  }
+
+  .pressureValue {
+    font-size: 18px;
   }
 }

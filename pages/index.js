@@ -243,28 +243,36 @@ const Home = () => {
           style={{
             background: 'linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%)',
             marginTop: '56px',
-            padding: '64px 48px',
+            padding: '64px 32px 96px',
           }}
         >
-          <h2
-            style={{
-              fontSize: '35px',
-              fontWeight: 300,
-              color: '#000000',
-              letterSpacing: 0,
-              lineHeight: 1.25,
-              margin: '0 0 48px',
-              textAlign: 'center',
-            }}
-          >
-            買賣力道結果
-          </h2>
+          {/* Section header */}
+          <div style={{ maxWidth: '1280px', margin: '0 auto 48px' }}>
+            <h2
+              style={{
+                fontSize: '35px',
+                fontWeight: 300,
+                color: '#000000',
+                lineHeight: 1.25,
+                margin: '0 0 8px',
+              }}
+            >
+              買賣力道結果
+            </h2>
+            <p style={{ fontSize: '14px', fontWeight: 400, color: '#6b6b6b', margin: 0 }}>
+              顯示力道值 ≤ 0.6 的股票，共 {renderList.filter(i => {
+                const v = Number(i.pressure?.[1])
+                return !isNaN(v) && v <= 0.6
+              }).length} 檔
+            </p>
+          </div>
+
           <div
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              gap: '16px',
-              justifyContent: 'center',
+              gap: '20px',
+              justifyContent: 'flex-start',
               maxWidth: '1280px',
               margin: '0 auto',
             }}
