@@ -7,6 +7,8 @@ import { useRouter } from "next/dist/client/router"
 const PresureStick = ({ stockDetail, stockName, stockId , stockInfo }) => {
   const router = useRouter()
   const {id , name} = router.query
+  const displayId = stockId || id
+  const displayName = stockName || name
   const [chartOptions, setChartOptions] = useState({})
 
   // 收盤價差
@@ -137,7 +139,7 @@ const PresureStick = ({ stockDetail, stockName, stockId , stockInfo }) => {
         ]
       },
       title: {
-        text: `${id} ${name}`
+        text: `${displayId} ${displayName || ''}`
       },
       chart: {
         height: 600, // 设置整个图表的高度

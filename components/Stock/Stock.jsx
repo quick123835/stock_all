@@ -193,7 +193,7 @@ const InstitutionalTable = ({ data, tableStyle, wrapperStyle }) => {
 }
 
 /* ── 主元件 ── */
-const Stock = ({ stockId: propStockId }) => {
+const Stock = ({ stockId: propStockId, stockName: propStockName }) => {
   const router = useRouter()
   const id = propStockId || router.query.id
   const { container, tabs, tab, activeTab, tabContent, subTabs, subTab, activeSubTab, table, revenueWrapper } = styles
@@ -271,7 +271,7 @@ const Stock = ({ stockId: propStockId }) => {
 
       <div className={tabContent}>
         {currentTab === '壓力圖' && (
-          <PresureStick stockDetail={stockDetail} stockId={id} stockInfo={stockInfo} />
+          <PresureStick stockDetail={stockDetail} stockId={id} stockName={propStockName} stockInfo={stockInfo} />
         )}
 
         {currentTab === '基本面' && (
