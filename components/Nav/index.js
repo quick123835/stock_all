@@ -1,19 +1,12 @@
-import { useSelector, useDispatch } from 'react-redux'
-import { getStockInfo } from '../../lib/api/stocks'
-import { useRouter } from 'next/router'
+import { useSelector } from 'react-redux'
 import Link from 'next/link'
 import styles from './index.module.scss'
 import Swal from 'sweetalert2'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 function Navbar1 ({ onOpenSearchModal }) {
-  const [input , setInput] = useState('')
-
-  const inputValue = useSelector(state => state.SearchReducer)
+  const [input, setInput] = useState('')
   const allStocks = useSelector(state => state.getTtlStocksReducer)
-  const dispatch = useDispatch()
-  const router = useRouter()
-
 
   const handleChange = e => {
     const value = e.target.value
@@ -36,38 +29,30 @@ function Navbar1 ({ onOpenSearchModal }) {
     setInput('')
   }
 
-  useEffect(() => {
-    console.log(allStocks)
-  },[allStocks])
+  const handleKeyDown = e => {
+    if (e.key === 'Enter') handleClick()
+  }
 
-  const { navbar } = styles
+  const { navbar, logo, searchArea, input: inputClass, searchBtn } = styles
 
   return (
-    <nav
-      className={`${navbar} navbar navbar-expand-lg bg-body-tertiary position-fixed top-0 border-bottom w-100`}
-    >
-      <div className='container-fluid '>
-        <Link href='/'>
-          <span className='navbar-brand w-25' style={{ cursor: 'pointer' }}>
-            買賣力道基地
-          </span>
-        </Link>
-        <div className='d-flex w-50 '>
-          <input
-            className='form-control me-1'
-            type='search'
-            placeholder='股票代號'
-            aria-label='Search'
-            value={input}
-            onChange={handleChange}
-          />
-          <button
-            className='btn btn-outline-success w-50'
-            onClick={handleClick}
-          >
-            Search
-          </button>
-        </div>
+    <nav className={navbar}>
+      <Link href='/'>
+        <span className={logo}>買賣力道基地</span>
+      </Link>
+      <div className={searchArea}>
+        <input
+          className={inputClass}
+          type='search'
+          placeholder='股票代號'
+          aria-label='Search'
+          value={input}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+        />
+        <button className={searchBtn} onClick={handleClick}>
+          Search
+        </button>
       </div>
     </nav>
   )

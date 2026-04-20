@@ -26,34 +26,34 @@
   height: 100%;
   max-width: 1200px;
   max-height: 90vh;
-  background: white;
-  border-radius: 8px;
+  background: #ffffff;
+  border-radius: 24px;
   overflow: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: rgba(0, 0, 0, 0.8) 0 5px 9px 0;
 }
 
 .closeButton {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 16px;
+  right: 16px;
   width: 40px;
   height: 40px;
   border: none;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 100%;
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 500;
   cursor: pointer;
   z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
-  transition: all 0.2s ease;
+  color: #ffffff;
+  transition: background 180ms ease;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.2);
-    color: #000;
+    background: #e5e5e5;
+    color: #000000;
   }
 }
 
@@ -61,16 +61,17 @@
   .overlay {
     padding: 10px;
   }
-  
+
   .content {
     max-height: 95vh;
+    border-radius: 19px;
   }
-  
+
   .closeButton {
     top: 10px;
     right: 10px;
-    width: 35px;
-    height: 35px;
+    width: 36px;
+    height: 36px;
     font-size: 16px;
   }
 }

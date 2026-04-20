@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import { Provider } from 'react-redux'
 import store from '../lib/redux/store'
 import '../styles/tailwind.css'
+import '../styles/globals.css'
 
 function MyApp ({ Component, pageProps }) {
   return (
