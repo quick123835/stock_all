@@ -1,10 +1,9 @@
-import { getAllStocks, getStockInfo } from '../lib/api/stocks'
+import { getAllStocks } from '../lib/api/stocks'
 import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import ListItem from '../components/ListItem'
 import CategoryStockModal from '../components/CategoryStockModal/CategoryStockModal'
-import { getTotalStocks, StockInfo } from '../lib/redux/actions/actions'
-import presureCalculate from '../lib/presureCalculate'
+import { getTotalStocks } from '../lib/redux/actions/actions'
 import { useRouter } from 'next/router'
 
 const btnStyle = {
@@ -87,46 +86,23 @@ const Home = () => {
     }
   }
 
-  const getStockInfoAsync = async stock => {
-    try {
-      const res = await getStockInfo(stock.stock_id)
-      if (res) {
-        dispatch(StockInfo(res))
-        const pressure = presureCalculate(res)
-
-        setRenderList(prevList => {
-          const exists = prevList.some(i => i.id === stock.stock_id)
-          if (exists) return prevList
-          return [
-            ...prevList,
-            {
-              name: stock.stock_name,
-              id: stock.stock_id,
-              pressure: pressure,
-            },
-          ]
-        })
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
 
   const handleCalculateAll = async () => {
     setCalculating(true)
     setRenderList([])
 
-    const batchSize = 10
-    const delay = ms => new Promise(r => setTimeout(r, ms))
-
     try {
-      for (let i = 0; i < stocks.length; i += batchSize) {
-        const batch = stocks.slice(i, i + batchSize)
-        await Promise.all(batch.map(stock => getStockInfoAsync(stock)))
-        await delay(100)
-      }
+      const res = await fetch('/api/pressure')
+      const data = await res.json()
+      setRenderList(
+        data.map(item => ({
+          id: item.stock_id,
+          name: item.stock_name,
+          pressure: [null, item.pressure],
+        }))
+      )
     } catch (error) {
-      console.error('批次執行錯誤：', error)
+      console.error('載入壓力資料失敗：', error)
     } finally {
       setCalculating(false)
     }
@@ -229,10 +205,7 @@ const Home = () => {
           }}
         >
           <p style={{ color: '#cccccc', fontSize: '22px', fontWeight: 300, margin: '0 0 16px' }}>
-            一鍵力道計算中...
-          </p>
-          <p style={{ color: '#cccccc', fontSize: '14px', fontWeight: 400 }}>
-            已完成 {renderList.length} / {stocks.length}
+            載入力道資料中...
           </p>
         </section>
       )}
