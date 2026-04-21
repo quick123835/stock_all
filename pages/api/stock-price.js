@@ -1,7 +1,28 @@
+/**
+ * pages/api/stock-price.js — 股價日K資料 API（DB 快取 + FinMind fallback）
+ *
+ * 查詢流程：
+ * 1. 先查 MongoDB 的 StockPrice collection
+ * 2. 如果 DB 裡有足夠資料（>= MIN_ROWS 筆），直接回傳，不打 FinMind
+ * 3. 如果 DB 資料不足（首次查詢或資料過舊），去打 FinMind 取得最新資料，
+ *    同時把結果 upsert 進 DB 供下次使用
+ *
+ * 為什麼用 MIN_ROWS = 20 判斷「夠不夠」，而不是判斷日期範圍？
+ * 因為新上市股票可能本來就只有幾筆資料，不需要每次都去打 FinMind。
+ * 20 筆是做壓力計算的最低門檻（需要一定天數的歷史資料才能算移動平均）。
+ *
+ * upsert 策略（bulkWrite + updateOne upsert）：
+ * - 每筆資料以 { stock_id, date } 作為唯一 key（對應 StockPrice 的 compound index）
+ * - 已存在的資料用 $set 更新（確保數值是最新的），不存在的新增
+ * - ordered: false → 單筆 upsert 失敗不會中斷整批作業
+ */
+
 import { connectDB } from '../../lib/db/mongoose'
 import StockPrice from '../../lib/db/models/StockPrice'
 
 const FINMIND_BASE = 'https://api.finmindtrade.com/api/v4/data'
+
+// 至少要有 20 筆 DB 資料才算「有快取」，否則重新去抓
 const MIN_ROWS = 20
 
 export default async function handler(req, res) {
@@ -11,19 +32,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'id is required' })
   }
 
-  await connectDB()
+  // 先嘗試從 DB 取資料，失敗則 fallback 打 FinMind
+  try {
+    await connectDB()
 
-  const query = { stock_id: id }
-  if (start_date) query.date = { ...query.date, $gte: start_date }
-  if (end_date) query.date = { ...query.date, $lte: end_date }
+    const query = { stock_id: id }
+    if (start_date) query.date = { ...query.date, $gte: start_date }
+    if (end_date) query.date = { ...query.date, $lte: end_date }
 
-  const cached = await StockPrice.find(query).sort({ date: 1 }).lean()
+    const cached = await StockPrice.find(query).sort({ date: 1 }).lean()
 
-  if (cached.length >= MIN_ROWS) {
-    return res.status(200).json(cached)
+    if (cached.length >= MIN_ROWS) {
+      return res.status(200).json(cached)
+    }
+  } catch (dbErr) {
+    console.warn('[stock-price] DB lookup failed, falling back to FinMind:', dbErr.message)
   }
 
-  // fallback: fetch from FinMind and upsert
+  // DB 資料不足或連線失敗，fallback 到 FinMind 即時抓取
   const token = process.env.FINMIND_TOKEN
   const params = new URLSearchParams({ dataset: 'TaiwanStockPrice', data_id: id })
   if (start_date) params.set('start_date', start_date)
@@ -38,14 +64,18 @@ export default async function handler(req, res) {
     const rows = json.data || []
 
     if (rows.length > 0) {
-      const ops = rows.map(row => ({
-        updateOne: {
-          filter: { stock_id: row.stock_id, date: row.date },
-          update: { $set: row },
-          upsert: true,
-        },
-      }))
-      await StockPrice.bulkWrite(ops, { ordered: false })
+      try {
+        const ops = rows.map(row => ({
+          updateOne: {
+            filter: { stock_id: row.stock_id, date: row.date },
+            update: { $set: row },
+            upsert: true,
+          },
+        }))
+        await StockPrice.bulkWrite(ops, { ordered: false })
+      } catch (writeErr) {
+        console.warn('[stock-price] DB write failed:', writeErr.message)
+      }
     }
 
     return res.status(200).json(rows)
