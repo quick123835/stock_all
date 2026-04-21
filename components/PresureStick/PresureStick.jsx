@@ -191,8 +191,12 @@ const PresureStick = ({ stockDetail, stockName, stockId , stockInfo }) => {
         {
           type: 'candlestick',
           name: '股票价格',
-          data: stockKLine, // 这里填入K线图数据
-          yAxis: 0 // 使用第一个y轴来显示K线图
+          data: stockKLine,
+          yAxis: 0,
+          color: '#00a550',       // 跌：綠色
+          lineColor: '#00a550',
+          upColor: '#e84040',     // 漲：紅色
+          upLineColor: '#e84040',
         },
         {
           type: 'spline',
