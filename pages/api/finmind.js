@@ -37,40 +37,30 @@ export default async function handler(req, res) {
     .filter(Boolean)
     .join(':')
 
-  // 嘗試從 DB 快取取資料，失敗不影響主流程
   try {
     await connectDB()
+
     const cached = await FinMindCache.findOne({ cacheKey }).lean()
     if (cached) {
       return res.status(200).json(cached.data)
     }
-  } catch (dbErr) {
-    console.warn('[finmind] DB cache lookup failed, falling back to FinMind directly:', dbErr.message)
-  }
 
-  // 打 FinMind
-  const params = new URLSearchParams({ dataset })
-  if (data_id) params.set('data_id', data_id)
-  if (start_date) params.set('start_date', start_date)
-  if (end_date) params.set('end_date', end_date)
-  if (token) params.set('token', token)
+    const params = new URLSearchParams({ dataset })
+    if (data_id) params.set('data_id', data_id)
+    if (start_date) params.set('start_date', start_date)
+    if (end_date) params.set('end_date', end_date)
+    if (token) params.set('token', token)
 
-  try {
     const response = await fetch(`${BASE_URL}?${params}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
     const data = await response.json()
 
-    // 寫回快取（失敗不影響回傳）
-    try {
-      await FinMindCache.findOneAndUpdate(
-        { cacheKey },
-        { cacheKey, data },
-        { upsert: true, new: true }
-      )
-    } catch (cacheErr) {
-      console.warn('[finmind] DB cache write failed:', cacheErr.message)
-    }
+    await FinMindCache.findOneAndUpdate(
+      { cacheKey },
+      { cacheKey, data },
+      { upsert: true, new: true }
+    )
 
     return res.status(200).json(data)
   } catch (error) {

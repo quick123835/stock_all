@@ -32,24 +32,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'id is required' })
   }
 
-  // 先嘗試從 DB 取資料，失敗則 fallback 打 FinMind
-  try {
-    await connectDB()
+  await connectDB()
 
-    const query = { stock_id: id }
-    if (start_date) query.date = { ...query.date, $gte: start_date }
-    if (end_date) query.date = { ...query.date, $lte: end_date }
+  const query = { stock_id: id }
+  if (start_date) query.date = { ...query.date, $gte: start_date }
+  if (end_date) query.date = { ...query.date, $lte: end_date }
 
-    const cached = await StockPrice.find(query).sort({ date: 1 }).lean()
+  const cached = await StockPrice.find(query).sort({ date: 1 }).lean()
 
-    if (cached.length >= MIN_ROWS) {
-      return res.status(200).json(cached)
-    }
-  } catch (dbErr) {
-    console.warn('[stock-price] DB lookup failed, falling back to FinMind:', dbErr.message)
+  if (cached.length >= MIN_ROWS) {
+    return res.status(200).json(cached)
   }
 
-  // DB 資料不足或連線失敗，fallback 到 FinMind 即時抓取
+  // DB 資料不足，fallback 到 FinMind 即時抓取
   const token = process.env.FINMIND_TOKEN
   const params = new URLSearchParams({ dataset: 'TaiwanStockPrice', data_id: id })
   if (start_date) params.set('start_date', start_date)
@@ -64,18 +59,14 @@ export default async function handler(req, res) {
     const rows = json.data || []
 
     if (rows.length > 0) {
-      try {
-        const ops = rows.map(row => ({
-          updateOne: {
-            filter: { stock_id: row.stock_id, date: row.date },
-            update: { $set: row },
-            upsert: true,
-          },
-        }))
-        await StockPrice.bulkWrite(ops, { ordered: false })
-      } catch (writeErr) {
-        console.warn('[stock-price] DB write failed:', writeErr.message)
-      }
+      const ops = rows.map(row => ({
+        updateOne: {
+          filter: { stock_id: row.stock_id, date: row.date },
+          update: { $set: row },
+          upsert: true,
+        },
+      }))
+      await StockPrice.bulkWrite(ops, { ordered: false })
     }
 
     return res.status(200).json(rows)
