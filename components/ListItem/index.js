@@ -12,13 +12,15 @@ const ListItem = ({ item, onStockClick }) => {
 
   if (isNaN(roundedNumber) || roundedNumber > 0.6) return null
 
-  const { card, cardName, meta, divider, pressureRow, pressureLabel, pressureValue } = styles
+  const { card, header, cardName, stockId, date: dateClass, divider, pressureRow, pressureLabel, pressureValue } = styles
 
   return (
     <div className={card} onClick={() => onStockClick?.(item.id, item.name)}>
-      <div className={cardName}>{item.name}</div>
-      <div className={meta}>代碼：{item.id}</div>
-      <div className={meta}>{formattedDate}</div>
+      <div className={header}>
+        <span className={cardName}>{item.name}</span>
+        <span className={stockId}>{item.id}</span>
+      </div>
+      <div className={dateClass}>{formattedDate}</div>
       <div className={divider} />
       <div className={pressureRow}>
         <span className={pressureLabel}>買賣力道</span>
