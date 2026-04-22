@@ -97,13 +97,14 @@ async function syncStock(stock, dateRange, token) {
   // 計算壓力值並 upsert 進 StockPressure
   try {
     const pressure = presureCalculate([...rows])
-    if (pressure) {
+    const pressureValue = pressure?.[1]
+    if (pressureValue !== undefined && isFinite(pressureValue) && !isNaN(pressureValue)) {
       await StockPressure.findOneAndUpdate(
         { stock_id: stock.stock_id },
         {
           stock_id: stock.stock_id,
           stock_name: stock.stock_name || '',
-          pressure: pressure[1],
+          pressure: pressureValue,
           pressure_date: rows[rows.length - 1]?.date || '',
           updated_at: new Date(),
         },

@@ -98,7 +98,7 @@ const Home = () => {
         data.map(item => ({
           id: item.stock_id,
           name: item.stock_name,
-          pressure: [null, item.pressure],
+          pressure: [new Date(item.pressure_date).getTime(), item.pressure],
         }))
       )
     } catch (error) {
