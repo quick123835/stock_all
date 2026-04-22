@@ -37,14 +37,22 @@ export default async function handler(req, res) {
     .filter(Boolean)
     .join(':')
 
+  // 嘗試從 DB 快取讀取，DB 掛掉時直接跳過，fallback 到 FinMind
+  let dbAvailable = false
   try {
     await connectDB()
+    dbAvailable = true
 
     const cached = await FinMindCache.findOne({ cacheKey }).lean()
     if (cached) {
       return res.status(200).json(cached.data)
     }
+  } catch (dbErr) {
+    console.error('[finmind db error, falling back to FinMind]', dbErr)
+  }
 
+  // 快取未命中或 DB 無法連線，直接打 FinMind
+  try {
     const params = new URLSearchParams({ dataset })
     if (data_id) params.set('data_id', data_id)
     if (start_date) params.set('start_date', start_date)
@@ -56,11 +64,14 @@ export default async function handler(req, res) {
     })
     const data = await response.json()
 
-    await FinMindCache.findOneAndUpdate(
-      { cacheKey },
-      { cacheKey, data },
-      { upsert: true, new: true }
-    )
+    // DB 可用才存快取，避免 DB 已掛掉時再試一次 DB 操作
+    if (dbAvailable) {
+      FinMindCache.findOneAndUpdate(
+        { cacheKey },
+        { cacheKey, data },
+        { upsert: true, new: true }
+      ).catch(err => console.error('[finmind cache write error]', err))
+    }
 
     return res.status(200).json(data)
   } catch (error) {

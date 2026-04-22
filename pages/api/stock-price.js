@@ -32,19 +32,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'id is required' })
   }
 
-  await connectDB()
+  // 嘗試從 DB 讀取快取，DB 掛掉時直接 fallback 到 FinMind，不中斷服務
+  try {
+    await connectDB()
 
-  const query = { stock_id: id }
-  if (start_date) query.date = { ...query.date, $gte: start_date }
-  if (end_date) query.date = { ...query.date, $lte: end_date }
+    const query = { stock_id: id }
+    if (start_date) query.date = { ...query.date, $gte: start_date }
+    if (end_date) query.date = { ...query.date, $lte: end_date }
 
-  const cached = await StockPrice.find(query).sort({ date: 1 }).lean()
+    const cached = await StockPrice.find(query).sort({ date: 1 }).lean()
 
-  if (cached.length >= MIN_ROWS) {
-    return res.status(200).json(cached)
+    if (cached.length >= MIN_ROWS) {
+      return res.status(200).json(cached)
+    }
+  } catch (dbErr) {
+    console.error('[stock-price db error, falling back to FinMind]', dbErr)
   }
 
-  // DB 資料不足，fallback 到 FinMind 即時抓取
+  // DB 資料不足或 DB 無法連線，fallback 到 FinMind 即時抓取
   const token = process.env.FINMIND_TOKEN
   const params = new URLSearchParams({ dataset: 'TaiwanStockPrice', data_id: id })
   if (start_date) params.set('start_date', start_date)
