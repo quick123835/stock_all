@@ -131,6 +131,18 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
+  /**
+   * 為什麼用 streaming response（res.writeHead + res.write + res.end）？
+   *
+   * Heroku router 有 30 秒 H12 timeout：若 30 秒內沒有收到任何 response byte，
+   * 就會強制切斷連線。sync 跑完 1500+ 支股票需要幾分鐘，遠超過 30 秒。
+   *
+   * 解法：立刻送出 HTTP headers + 第一行文字，讓 router 看到連線是活的；
+   * 之後每批跑完再寫一行進度，持續保持連線直到全部完成再 res.end()。
+   */
+  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+  res.write('[sync] Starting...\n')
+
   await connectDB()
 
   const token = process.env.FINMIND_TOKEN
@@ -141,9 +153,14 @@ export default async function handler(req, res) {
   let stocks
   try {
     stocks = await fetchAllStocks(token)
+    res.write(`[sync] ${stocks.length} stocks found\n`)
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to fetch stock list', detail: err.message })
+    res.write(`[sync] ERROR fetching stock list: ${err.message}\n`)
+    res.end()
+    return
   }
+
+  const totalBatches = Math.ceil(stocks.length / BATCH_SIZE)
 
   // 分批處理，每批 BATCH_SIZE 檔，批次間等 BATCH_DELAY_MS ms
   for (let i = 0; i < stocks.length; i += BATCH_SIZE) {
@@ -159,17 +176,14 @@ export default async function handler(req, res) {
         }
       })
     )
+    // 每批完成後寫一行進度，讓 Heroku router 知道連線仍然活著，不會觸發 H12 timeout
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1
+    res.write(`[sync] batch ${batchNum}/${totalBatches} done, synced=${synced}\n`)
     await delay(BATCH_DELAY_MS)
   }
 
-  // 回傳同步結果統計，方便 cron job 的 log 知道這次同步情況
-  return res.status(200).json({
-    ok: true,
-    total_stocks: stocks.length,
-    synced_rows: synced,
-    failed_count: failed.length,
-    failed,
-  })
+  // 最後寫入結果摘要後結束串流
+  res.end(`[sync] DONE total=${stocks.length} synced=${synced} failed=${failed.length}\n`)
 }
 
 // 關閉 Next.js 預設的 4MB response limit，

@@ -47,6 +47,12 @@ const Home = () => {
   const [calculating, setCalculating] = useState(false)
   const [stocks, setStocks] = useState([])
   const [renderList, setRenderList] = useState([])
+  // activeTab: 目前顯示哪個 tab（'current' = 現在低於 0.6 | 'first-cross' = 第一次低於 0.6）
+  const [activeTab, setActiveTab] = useState('current')
+  // firstCrossList: 「第一次低於 0.6」tab 的股票清單，格式同 renderList
+  const [firstCrossList, setFirstCrossList] = useState([])
+  // firstCrossLoading: 「第一次低於 0.6」資料載入中的狀態，防止重複打 API
+  const [firstCrossLoading, setFirstCrossLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedStock, setSelectedStock] = useState({ id: '', name: '' })
 
@@ -105,6 +111,48 @@ const Home = () => {
       console.error('載入壓力資料失敗：', error)
     } finally {
       setCalculating(false)
+    }
+  }
+
+  /**
+   * 切換 tab 時呼叫。
+   * 切到「第一次低於 0.6」時才 lazy load /api/pressure-first-cross，
+   * 已載入過（firstCrossList 非空）就不重複打 API。
+   * 只把「現在低於 0.6」的股票 ID 傳給 API，縮小計算範圍、加快回應速度。
+   * pressure 欄位故意對齊 ListItem 的 [timestamp, value] 格式，讓卡片元件可以直接複用。
+   */
+  const handleTabChange = async (tab) => {
+    setActiveTab(tab)
+    if (tab === 'first-cross' && firstCrossList.length === 0 && !firstCrossLoading) {
+      setFirstCrossLoading(true)
+      try {
+        // 從現有結果撈出目前壓力值 <= 0.6 的股票 ID，只對這些股票做首次下穿計算
+        const belowIds = renderList
+          .filter(i => {
+            const v = Number(i.pressure?.[1])
+            return !isNaN(v) && v <= 0.6
+          })
+          .map(i => i.id)
+
+        const res = await fetch('/api/pressure-first-cross', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: belowIds }),
+        })
+        const data = await res.json()
+        setFirstCrossList(
+          data.map(item => ({
+            id: item.stock_id,
+            name: item.stock_name,
+            // cross_date 是 unix ms，cross_value 是壓力值，對齊 ListItem 的 pressure prop 格式
+            pressure: [item.cross_date, item.cross_value],
+          }))
+        )
+      } catch (error) {
+        console.error('載入首次下穿資料失敗：', error)
+      } finally {
+        setFirstCrossLoading(false)
+      }
     }
   }
 
@@ -220,40 +268,107 @@ const Home = () => {
           }}
         >
           {/* Section header */}
-          <div style={{ maxWidth: '1280px', margin: '0 auto 48px' }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto 32px' }}>
             <h2
               style={{
                 fontSize: '35px',
                 fontWeight: 300,
                 color: '#000000',
                 lineHeight: 1.25,
-                margin: '0 0 8px',
+                margin: '0 0 24px',
               }}
             >
               買賣力道結果
             </h2>
-            <p style={{ fontSize: '14px', fontWeight: 400, color: '#6b6b6b', margin: 0 }}>
-              顯示力道值 ≤ 0.6 的股票，共 {renderList.filter(i => {
-                const v = Number(i.pressure?.[1])
-                return !isNaN(v) && v <= 0.6
-              }).length} 檔
-            </p>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: '0', borderBottom: '2px solid #e5e7eb' }}>
+              {[
+                { key: 'current', label: '現在低於 0.6' },
+                { key: 'first-cross', label: '第一次低於 0.6' },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => handleTabChange(tab.key)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: activeTab === tab.key ? '2px solid #0070cc' : '2px solid transparent',
+                    marginBottom: '-2px',
+                    padding: '10px 24px',
+                    fontSize: '15px',
+                    fontWeight: activeTab === tab.key ? 600 : 400,
+                    color: activeTab === tab.key ? '#0070cc' : '#6b6b6b',
+                    cursor: 'pointer',
+                    transition: 'color 150ms ease, border-color 150ms ease',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '24px',
-              justifyContent: 'flex-start',
-              maxWidth: '1280px',
-              margin: '0 auto',
-            }}
-          >
-            {renderList.map((item, index) => (
-              <ListItem key={index} item={item} onStockClick={handleStockClick} />
-            ))}
-          </div>
+          {/* Tab: 現在低於 0.6 */}
+          {activeTab === 'current' && (
+            <>
+              <div style={{ maxWidth: '1280px', margin: '0 auto 24px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 400, color: '#6b6b6b', margin: 0 }}>
+                  顯示最新力道值 ≤ 0.6 的股票，共 {renderList.filter(i => {
+                    const v = Number(i.pressure?.[1])
+                    return !isNaN(v) && v <= 0.6
+                  }).length} 檔
+                </p>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '24px',
+                  justifyContent: 'flex-start',
+                  maxWidth: '1280px',
+                  margin: '0 auto',
+                }}
+              >
+                {renderList.map((item, index) => (
+                  <ListItem key={index} item={item} onStockClick={handleStockClick} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Tab: 第一次低於 0.6 */}
+          {activeTab === 'first-cross' && (
+            <>
+              <div style={{ maxWidth: '1280px', margin: '0 auto 24px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 400, color: '#6b6b6b', margin: 0 }}>
+                  {firstCrossLoading
+                    ? '計算中...'
+                    : `近 30 個交易日內首次下穿 0.6 的股票，共 ${firstCrossList.length} 檔`}
+                </p>
+              </div>
+              {firstCrossLoading ? (
+                <div style={{ maxWidth: '1280px', margin: '0 auto', color: '#6b6b6b', fontSize: '18px', fontWeight: 300 }}>
+                  計算首次下穿資料中...
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '24px',
+                    justifyContent: 'flex-start',
+                    maxWidth: '1280px',
+                    margin: '0 auto',
+                  }}
+                >
+                  {firstCrossList.map((item, index) => (
+                    <ListItem key={index} item={item} onStockClick={handleStockClick} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </section>
       )}
 
