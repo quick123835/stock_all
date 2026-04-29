@@ -5,6 +5,7 @@ import ListItem from '../components/ListItem'
 import CategoryStockModal from '../components/CategoryStockModal/CategoryStockModal'
 import { getTotalStocks } from '../lib/redux/actions/actions'
 import { useRouter } from 'next/router'
+import homeStyles from '../styles/Home.module.scss'
 
 const btnStyle = {
   background: '#0070cc',
@@ -186,6 +187,7 @@ const Home = () => {
       {/* Hero Section */}
       {showHero && (
         <section
+          className={homeStyles.heroSection}
           style={{
             background: 'linear-gradient(180deg, #121314 0%, #000000 100%)',
             minHeight: 'calc(100vh - 56px)',
@@ -194,7 +196,6 @@ const Home = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '96px 48px',
             textAlign: 'center',
           }}
         >
@@ -204,29 +205,10 @@ const Home = () => {
             </p>
           ) : (
             <>
-              <h1
-                style={{
-                  color: '#ffffff',
-                  fontSize: '54px',
-                  fontWeight: 300,
-                  letterSpacing: '-0.1px',
-                  lineHeight: 1.25,
-                  margin: '0 0 16px',
-                }}
-              >
+              <h1 className={homeStyles.heroTitle}>
                 買賣力道基地
               </h1>
-              <p
-                style={{
-                  color: '#cccccc',
-                  fontSize: '18px',
-                  fontWeight: 400,
-                  letterSpacing: '0.1px',
-                  lineHeight: 1.5,
-                  margin: '0 0 48px',
-                  maxWidth: '480px',
-                }}
-              >
+              <p className={homeStyles.heroSubtitle}>
                 台灣股市買賣壓力分析工具．共 {stocks.length} 檔股票
               </p>
               <HeroButton onClick={handleCalculateAll}>
@@ -240,6 +222,7 @@ const Home = () => {
       {/* Calculating State */}
       {calculating && (
         <section
+          className={homeStyles.heroSection}
           style={{
             background: 'linear-gradient(180deg, #121314 0%, #000000 100%)',
             minHeight: 'calc(100vh - 56px)',
@@ -248,7 +231,6 @@ const Home = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '96px 48px',
             textAlign: 'center',
           }}
         >
@@ -261,28 +243,20 @@ const Home = () => {
       {/* Results Grid */}
       {showCards && (
         <section
+          className={homeStyles.resultsSection}
           style={{
             background: 'linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%)',
             marginTop: '56px',
-            padding: '64px 32px 96px',
           }}
         >
           {/* Section header */}
           <div style={{ maxWidth: '1280px', margin: '0 auto 32px' }}>
-            <h2
-              style={{
-                fontSize: '35px',
-                fontWeight: 300,
-                color: '#000000',
-                lineHeight: 1.25,
-                margin: '0 0 24px',
-              }}
-            >
+            <h2 className={homeStyles.resultsTitle}>
               買賣力道結果
             </h2>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: '0', borderBottom: '2px solid #e5e7eb' }}>
+            <div className={homeStyles.tabBar}>
               {[
                 { key: 'current', label: '現在低於 0.6' },
                 { key: 'first-cross', label: '第一次低於 0.6' },
@@ -290,18 +264,7 @@ const Home = () => {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    borderBottom: activeTab === tab.key ? '2px solid #0070cc' : '2px solid transparent',
-                    marginBottom: '-2px',
-                    padding: '10px 24px',
-                    fontSize: '15px',
-                    fontWeight: activeTab === tab.key ? 600 : 400,
-                    color: activeTab === tab.key ? '#0070cc' : '#6b6b6b',
-                    cursor: 'pointer',
-                    transition: 'color 150ms ease, border-color 150ms ease',
-                  }}
+                  className={`${homeStyles.tabBtn} ${activeTab === tab.key ? homeStyles.tabBtnActive : homeStyles.tabBtnInactive}`}
                 >
                   {tab.label}
                 </button>
@@ -320,16 +283,7 @@ const Home = () => {
                   }).length} 檔
                 </p>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '24px',
-                  justifyContent: 'flex-start',
-                  maxWidth: '1280px',
-                  margin: '0 auto',
-                }}
-              >
+              <div className={homeStyles.cardsGrid}>
                 {renderList.map((item, index) => (
                   <ListItem key={index} item={item} onStockClick={handleStockClick} />
                 ))}
@@ -352,16 +306,7 @@ const Home = () => {
                   計算首次下穿資料中...
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '24px',
-                    justifyContent: 'flex-start',
-                    maxWidth: '1280px',
-                    margin: '0 auto',
-                  }}
-                >
+                <div className={homeStyles.cardsGrid}>
                   {firstCrossList.map((item, index) => (
                     <ListItem key={index} item={item} onStockClick={handleStockClick} />
                   ))}

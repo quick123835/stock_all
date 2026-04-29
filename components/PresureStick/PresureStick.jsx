@@ -142,8 +142,22 @@ const PresureStick = ({ stockDetail, stockName, stockId , stockInfo }) => {
         text: `${displayId} ${displayName || ''}`
       },
       chart: {
-        height: 600, // 设置整个图表的高度
-        width: 800
+        height: 500, // 设置整个图表的高度
+        // width 不設定，讓 Highcharts 自動填滿容器寬度（RWD 關鍵）
+      },
+      // 手機螢幕縮小圖表高度，避免太佔版面
+      responsive: {
+        rules: [{
+          condition: { maxWidth: 600 },
+          chartOptions: {
+            chart: { height: 380 },
+            yAxis: [
+              { title: { text: null } },
+              { title: { text: null } },
+              { title: { text: null } },
+            ],
+          },
+        }],
       },
       yAxis: [
         {

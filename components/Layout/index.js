@@ -7,7 +7,7 @@ function Footer () {
     <footer style={{
       background: '#0070cc',
       color: '#ffffff',
-      padding: '48px 64px',
+      padding: 'clamp(24px, 5vw, 48px) clamp(16px, 5vw, 64px)',
       textAlign: 'center',
       marginTop: 'auto',
     }}>

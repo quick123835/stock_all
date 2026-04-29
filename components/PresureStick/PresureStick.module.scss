@@ -1,11 +1,21 @@
 .pic {
   padding: 16px;
   padding-top: 8px;
-  border: 1px solid black;
-  width: 80%;
+  border: 1px solid #e0e0e0;
+  width: 90%;
   margin: 0 auto;
-  display:flex;
+  display: flex;
   justify-content: center;
+  /* 讓內部 Highcharts 容器能正確計算寬度 */
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 8px;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+  }
 }
 .category {
   width: 300px;

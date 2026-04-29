@@ -79,7 +79,9 @@
 
 @media screen and (max-width: 768px) {
   .card {
-    width: 160px;
+    /* calc((100% of cardsGrid - gap) / 2) → 手機兩欄並排 */
+    width: calc(50vw - 28px);
+    min-width: 140px;
     padding: 16px 14px 12px;
   }
 
@@ -90,5 +92,11 @@
 
   .pressureValue {
     font-size: 22px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .card {
+    width: calc(50vw - 22px);
   }
 }

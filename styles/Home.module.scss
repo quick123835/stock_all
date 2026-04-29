@@ -1,0 +1,116 @@
+/* Hero Section */
+.heroSection {
+  padding: 96px 48px;
+
+  @media (max-width: 768px) {
+    padding: 56px 20px 48px;
+  }
+}
+
+.heroTitle {
+  font-size: 54px;
+  font-weight: 300;
+  letter-spacing: -0.1px;
+  line-height: 1.25;
+  margin: 0 0 16px;
+  color: #ffffff;
+
+  @media (max-width: 768px) {
+    font-size: 34px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 28px;
+  }
+}
+
+.heroSubtitle {
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  line-height: 1.5;
+  margin: 0 0 48px;
+  color: #cccccc;
+  max-width: 480px;
+
+  @media (max-width: 768px) {
+    font-size: 15px;
+    margin-bottom: 36px;
+  }
+}
+
+/* Results Section */
+.resultsSection {
+  padding: 64px 32px 96px;
+
+  @media (max-width: 768px) {
+    padding: 32px 16px 48px;
+  }
+}
+
+.resultsTitle {
+  font-size: 35px;
+  font-weight: 300;
+  color: #000000;
+  line-height: 1.25;
+  margin: 0 0 24px;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Tab buttons */
+.tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e5e7eb;
+  overflow-x: auto; /* 超多 tab 時可左右滑 */
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabBtn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 24px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
+
+.tabBtnActive {
+  border-bottom-color: #0070cc;
+  color: #0070cc;
+  font-weight: 600;
+}
+
+.tabBtnInactive {
+  color: #6b6b6b;
+  font-weight: 400;
+}
+
+/* Cards grid */
+.cardsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: flex-start;
+  max-width: 1280px;
+  margin: 0 auto;
+
+  @media (max-width: 480px) {
+    gap: 12px;
+    /* 手機上讓兩張卡片剛好並排 */
+    justify-content: space-between;
+  }
+}
